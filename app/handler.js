@@ -3,9 +3,11 @@ import getLogger from './utils/logger.js';
 import middy from '@middy/core';
 import validateMode from './middleware/validateMode.js';
 import errorHandler from './middleware/errorHandler.js';
+import validateEmails from './middleware/validateEmails.js';
 
 const handlerController = async (event, context) => {
   try {
+
     getLogger().info({event}, 'Handler called with event:');
 
     const model = getModel();
@@ -34,4 +36,5 @@ const handlerController = async (event, context) => {
 
 export const handler = middy(handlerController)
   .use(validateMode())
+  .use(validateEmails())
   .use(errorHandler())

@@ -6,7 +6,7 @@ import LocalModel from './localModel.js';
 export function getModel() {
   const models = {
     local: () => new LocalModel(),
-    external: () => new GeminiModel("gemini-2.0-flash")
+    gemini: () => new GeminiModel(config.GEMINI_MODEL_VERSION)
   };
 
   const modelFactory = models[config.MODEL_TYPE];
