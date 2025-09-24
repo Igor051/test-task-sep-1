@@ -4,18 +4,14 @@ import middy from '@middy/core';
 import validateMode from './middleware/validateMode.js';
 import errorHandler from './middleware/errorHandler.js';
 import validateEmails from './middleware/validateEmails.js';
+import { operations } from './utils/operations.js';
 
-const handlerController = async (event, context) => {
+const handlerController = async (event) => {
   try {
 
     getLogger().info({event}, 'Handler called with event:');
 
     const model = getModel();
-
-    const operations = {
-      summarize: (items, model) => Promise.all(items.map(item => model.summarize(item.body))),
-      classify: (items, model) => Promise.all(items.map(item => model.classify(item.body)))
-    };
 
     const result = await operations[event.mode](event.items, model);
 
@@ -27,10 +23,7 @@ const handlerController = async (event, context) => {
     };
   } catch (error) {
     getLogger().error(error, 'Handler error:');
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: error.message })
-    };
+    throw error;
   }
 };
 
