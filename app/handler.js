@@ -3,7 +3,6 @@ import getLogger from './utils/logger.js';
 import middy from '@middy/core';
 import validateMode from './middleware/validateMode.js';
 import errorHandler from './middleware/errorHandler.js';
-import { HttpError } from './utils/errors.js';
 
 const handlerController = async (event, context) => {
   try {
@@ -11,21 +10,14 @@ const handlerController = async (event, context) => {
 
     const model = getModel();
 
-    let result;
-    switch (event.mode) {
-      case "summarize":
-        result = await Promise.all(event.items.map(item => model.summarize(item.body)));
-        break;
-      case "classify":
-        result = await Promise.all(event.items.map(item => model.classify(item.body)));
-        getLogger().info({result}, "switch case")
-        break;
-      default:
-        const error = new HttpError(`Invalid mode: ${event.mode}`, 400);
-        throw error;
-    }
+    const operations = {
+      summarize: (items, model) => Promise.all(items.map(item => model.summarize(item.body))),
+      classify: (items, model) => Promise.all(items.map(item => model.classify(item.body)))
+    };
 
-    getLogger().info({result}, "after switch")
+    const result = await operations[event.mode](event.items, model);
+
+    getLogger().info({result}, "operation completed");
 
     return {
       statusCode: 200,
