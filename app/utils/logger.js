@@ -12,7 +12,7 @@ const logger = pino({
   }
 });
 
-export function getLogger() {
+function getLogger() {
   return logger;
 }
 

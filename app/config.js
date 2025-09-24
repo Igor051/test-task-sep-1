@@ -1,5 +1,7 @@
+import 'dotenv/config';
+
 export default {
-  USE_EXTERNAL_API: process.env.USE_EXTERNAL_API === 'true',
-  API_KEY: process.env.API_KEY,
-  LOG_LEVEL: process.env.LOG_LEVEL || 'info'
+  MODEL_TYPE: process.env.MODEL_TYPE,
+  LOG_LEVEL: process.env.LOG_LEVEL || 'info',
+  GEMINI_API_KEY: process.env.GEMINI_API_KEY
 };

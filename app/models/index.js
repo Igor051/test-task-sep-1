@@ -3,5 +3,12 @@ import ExternalApi from './externalApi.js';
 import LocalModel from './localModel.js';
 
 export function getModel() {
-  return config.USE_EXTERNAL_API ? new ExternalApi() : new LocalModel();
+  switch (config.MODEL_TYPE) {
+    case 'local':
+      return new LocalModel();
+    case 'external':
+      return new ExternalApi();
+    default:
+      throw new Error(`Invalid model type: ${config.MODEL_TYPE}`);
+  }
 }

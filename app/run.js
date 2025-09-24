@@ -1,24 +1,20 @@
 // app/run.js
-import fs from "fs";
-import path from "path";
 import minimist from "minimist";
 import { handler } from "./handler.js";
 import getLogger from "./utils/logger.js";
 import { getContext } from "./utils/context.js";
+import getEmails from "./utils/getEmails.js";
 
 async function main() {
-  const args = minimist(process.argv.slice(2));
-  const inputFile = args.input;
-  const mode = args.mode;
+  try {
+  const {input: inputFile, mode} = minimist(process.argv.slice(2));
 
   if (!inputFile || !mode) {
     getLogger().error("Usage: node app/run.js --input <file> --mode <classify|summarize>");
     process.exit(1);
   }
 
-  // Resolve relative to the directory where the command is run
-  const inputPath = path.resolve(process.cwd(), inputFile);
-  const emails = JSON.parse(fs.readFileSync(inputPath, "utf8"));
+  const emails = getEmails(inputFile)
 
   // This simulates Lambda's event object
   const event = {
@@ -26,10 +22,12 @@ async function main() {
     items: emails,
   };
 
-  try {
-    await handler(event, getContext(), () => {});
+  const result = await handler(event, getContext());
+
+  getLogger().info({result}, "Lambda execution result");
+
   } catch (err) {
-    getLogger().error(`Handler failed: ${err.message}`);
+    getLogger().error(`Execution failed: ${err.message}`);
     process.exit(1);
   }
 }

@@ -1,5 +1,3 @@
-export default class LocalModel {
-  async process(data) {
-    return { processed: true, source: 'local', data };
-  }
-}
+import ModelProvider from "./modelProvider.js";
+
+export default class LocalModel extends ModelProvider {}
