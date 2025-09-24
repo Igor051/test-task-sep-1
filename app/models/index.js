@@ -1,5 +1,6 @@
 import config from '../config.js';
-import ExternalApi from './externalApi.js';
+import { HttpError } from '../utils/errors.js';
+import GeminiModel from './geminiModel.js';
 import LocalModel from './localModel.js';
 
 export function getModel() {
@@ -7,8 +8,8 @@ export function getModel() {
     case 'local':
       return new LocalModel();
     case 'external':
-      return new ExternalApi();
-    default:
-      throw new Error(`Invalid model type: ${config.MODEL_TYPE}`);
+      return new GeminiModel("gemini-2.0-flash");
+    // default:
+    //   throw new HttpError(`Invalid model type: ${config.MODEL_TYPE}`, 500);
   }
 }

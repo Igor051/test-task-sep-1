@@ -5,8 +5,8 @@ import ModelProvider from './modelProvider.js';
 
 const logger = getLogger();
 
-export default class ExternalApi extends ModelProvider {
-  constructor() {
+export default class GeminiModel extends ModelProvider {
+  constructor(model) {
     super()
     const apiKey = config.GEMINI_API_KEY;
     if (!apiKey) {
@@ -14,7 +14,7 @@ export default class ExternalApi extends ModelProvider {
     }
 
     this.client = new GoogleGenerativeAI(apiKey);
-    this.model = this.client.getGenerativeModel({ model: "gemini-2.0-flash" });
+    this.model = this.client.getGenerativeModel({ model });
   }
 
   /**

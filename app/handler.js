@@ -1,6 +1,9 @@
 import { getModel } from './models/index.js';
 import getLogger from './utils/logger.js';
 import middy from '@middy/core';
+import validateMode from './middleware/validateMode.js';
+import errorHandler from './middleware/errorHandler.js';
+import { HttpError } from './utils/errors.js';
 
 const handlerController = async (event, context) => {
   try {
@@ -18,8 +21,8 @@ const handlerController = async (event, context) => {
         getLogger().info({result}, "switch case")
         break;
       default:
-        result = { error: 'Invalid mode' };
-        break;
+        const error = new HttpError(`Invalid mode: ${event.mode}`, 400);
+        throw error;
     }
 
     getLogger().info({result}, "after switch")
@@ -38,3 +41,5 @@ const handlerController = async (event, context) => {
 };
 
 export const handler = middy(handlerController)
+  .use(validateMode())
+  .use(errorHandler())
