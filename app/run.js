@@ -16,15 +16,18 @@ async function main() {
 
   const emails = getEmails(inputFile)
 
-  // This simulates Lambda's event object
+  // Lambda's event object
   const event = {
     mode,
     items: emails,
   };
 
+  // Invoking Lambda function
   const result = await handler(event, getContext());
 
-  getLogger().info({result}, "Lambda execution result");
+  getLogger().info({response: result}, "Lambda response");
+
+  getLogger().info({result: JSON.parse(result.body)}, "Result body");
 
   } catch (err) {
     getLogger().error(`Execution failed: ${err.message}`);

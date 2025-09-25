@@ -13,9 +13,8 @@ const handlerController = async (event) => {
 
     const model = getModel();
 
+    // Execute the requested operation (classify or summarize)
     const result = await operations[event.mode](event.items, model);
-
-    getLogger().info({result}, "operation completed");
 
     return {
       statusCode: 200,

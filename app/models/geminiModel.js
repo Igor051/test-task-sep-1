@@ -31,7 +31,7 @@ async classify(text) {
     const result = await this.model.generateContent(prompt);
     let content = result.response?.text?.()?.trim(); // safe access
 
-    getLogger().info({content}, 'Raw AI response:');
+    logger.info({content}, 'Raw AI response:');
 
     if (!content) return [];
 
@@ -51,12 +51,14 @@ async classify(text) {
       logger.warn('Unexpected classification format, returning empty array');
       return [];
     } catch (err) {
-      logger.error('Failed to parse classification output:',);
-      return [];
+    const message = `Failed to parse classification output: ${err.message}`
+    logger.error(message);
+    throw new Error(message)
     }
   } catch (err) {
-    logger.error(`Classification API call failed: ${err.message}`);
-    return [];
+    const message = `Classification API call failed: ${err.message}`
+    logger.error(message);
+    throw new Error(message)
   }
 }
 
