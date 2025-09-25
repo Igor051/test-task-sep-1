@@ -91,4 +91,60 @@ async classify(text) {
       throw new Error(context);
     }
   }
+
+  /**
+   * Batch classify multiple texts in single API call
+   * @param {string[]} texts
+   * @returns {Promise<string[][]>} array of topic arrays
+   */
+  async classifyBatch(texts) {
+    try {
+      if (!texts || texts.length === 0) return [];
+
+      const batchPrompt = `Classify each email into topics. Return JSON array of arrays:
+${texts.map((text, i) => `${i}: "${text.substring(0, 200)}"`).join('\n')}
+Format: [["topic1","topic2"],["topic3"]]`;
+
+      const result = await this.model.generateContent(batchPrompt);
+      let content = result.response?.text?.()?.trim();
+
+      if (!content) return texts.map(() => []);
+
+      content = content.replace(/^```(?:json)?\s*/, '').replace(/\s*```$/, '').trim();
+      const results = JSON.parse(content);
+      
+      return Array.isArray(results) ? results : texts.map(() => []);
+    } catch (err) {
+      logger.error(err, 'Batch classification failed, falling back to individual calls');
+      return Promise.all(texts.map(text => this.classify(text)));
+    }
+  }
+
+  /**
+   * Batch summarize multiple texts in single API call
+   * @param {string[]} texts
+   * @returns {Promise<string[]>} array of summaries
+   */
+  async summarizeBatch(texts) {
+    try {
+      if (!texts || texts.length === 0) return [];
+
+      const batchPrompt = `Summarize each email in 1-2 sentences. Return JSON array:
+${texts.map((text, i) => `${i}: "${text.substring(0, 300)}"`).join('\n')}
+Format: ["summary1","summary2"]`;
+
+      const result = await this.model.generateContent(batchPrompt);
+      let content = result.response?.text?.()?.trim();
+
+      if (!content) return texts.map(() => "");
+
+      content = content.replace(/^```(?:json)?\s*/, '').replace(/\s*```$/, '').trim();
+      const results = JSON.parse(content);
+      
+      return Array.isArray(results) ? results : texts.map(() => "");
+    } catch (err) {
+      logger.error(err, 'Batch summarization failed, falling back to individual calls');
+      return Promise.all(texts.map(text => this.summarize(text)));
+    }
+  }
 }
