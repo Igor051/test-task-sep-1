@@ -15,6 +15,7 @@ export default class GeminiModel extends ModelProvider {
 
     this.client = new GoogleGenerativeAI(apiKey);
     this.model = this.client.getGenerativeModel({ model });
+    this.cache = new Map();
   }
 
   /**
@@ -26,43 +27,41 @@ async classify(text) {
   try {
     if (!text || !text.trim()) return [];
 
+    const cacheKey = `classify:${text.substring(0, 100)}`;
+    if (this.cache.has(cacheKey)) {
+      logger.info('Cache hit for classification');
+      return this.cache.get(cacheKey);
+    }
+
     const prompt = `Classify the following email into relevant topics (e.g., finance, hr, technical, marketing): "${text}". Return a JSON array of topics only.`;
 
     const result = await this.model.generateContent(prompt);
-    let content = result.response?.text?.()?.trim(); // safe access
+    let content = result.response?.text?.()?.trim();
 
     logger.info({content}, 'Raw AI response:');
 
     if (!content) return [];
 
-    try {
-      // Remove code block markers if present
-      content = content.replace(/^```(?:json)?\s*/, '').replace(/\s*```$/, '').trim();
+    // Remove code block markers if present
+    content = content.replace(/^```(?:json)?\s*/, '').replace(/\s*```$/, '').trim();
 
-      // Ensure it's actually a string before parsing
-      if (typeof content === "string") {
-        const topics = JSON.parse(content);
-        if (Array.isArray(topics)) return topics;
-      }
-
-      // If content is already an array (some SDKs may return it parsed)
-      if (Array.isArray(content)) return content;
-
-      logger.warn('Unexpected classification format, returning empty array');
-      return [];
-    } catch (err) {
-    const message = `Failed to parse classification output: ${err.message}`
-    logger.error(message);
-    throw new Error(message)
+    let topics = [];
+    if (typeof content === "string") {
+      topics = JSON.parse(content);
+      if (!Array.isArray(topics)) topics = [];
+    } else if (Array.isArray(content)) {
+      topics = content;
     }
+
+    this.cache.set(cacheKey, topics);
+    return topics;
+
   } catch (err) {
-    const message = `Classification API call failed: ${err.message}`
-    logger.error(message);
-    throw new Error(message)
+      const context = `Classification API call failed: ${err.message}`
+      logger.error(err, context);
+      throw new Error(context);
   }
 }
-
-
 
   /**
    * Summarize text into 1–2 sentence summary
@@ -73,15 +72,23 @@ async classify(text) {
     try {
       if (!text || !text.trim()) return "";
 
+      const cacheKey = `summarize:${text.substring(0, 100)}`;
+      if (this.cache.has(cacheKey)) {
+        logger.info('Cache hit for summarization');
+        return this.cache.get(cacheKey);
+      }
+
       const prompt = `Summarize the following email in 1-2 sentences: "${text}"`;
 
       const result = await this.model.generateContent(prompt);
+      const summary = result.response.text()?.trim() || "";
 
-      getLogger().info(result.response.text())
-      return result.response.text()?.trim() || "";
+      this.cache.set(cacheKey, summary);
+      return summary;
     } catch (err) {
-      logger.error(err, `Summarization API call failed: ${err.message}`);
-      return "";
+      const context = `Summarization API call failed: ${err.message}`
+      logger.error(err, context);
+      throw new Error(context);
     }
   }
 }
