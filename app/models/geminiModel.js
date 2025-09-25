@@ -23,28 +23,22 @@ export default class GeminiModel extends ModelProvider {
    * @param {string} text
    * @returns {Promise<string[]>} array of topic strings
    */
-async classify(text) {
-  try {
+  async classify(text) {
     if (!text || !text.trim()) return [];
 
     const cacheKey = `classify:${text.substring(0, 100)}`;
-    if (this.cache.has(cacheKey)) {
-      logger.info('Cache hit for classification');
-      return this.cache.get(cacheKey);
-    }
+    const cached = this.#getCached(cacheKey);
+    if (cached) return cached;
 
     const prompt = `Classify the following email into relevant topics (e.g., finance, hr, technical, marketing): "${text}". Return a JSON array of topics only.`;
 
-    const result = await this.model.generateContent(prompt);
-    let content = result.response?.text?.()?.trim();
-
+    let content = await this.#generateContent(prompt, 'Classification');
     logger.info({content}, 'Raw AI response:');
 
     if (!content) return [];
 
-    // Remove code block markers if present
-    content = content.replace(/^```(?:json)?\s*/, '').replace(/\s*```$/, '').trim();
-
+    content = this.#cleanResponse(content);
+    
     let topics = [];
     if (typeof content === "string") {
       topics = JSON.parse(content);
@@ -55,13 +49,7 @@ async classify(text) {
 
     this.cache.set(cacheKey, topics);
     return topics;
-
-  } catch (err) {
-      const context = `Classification API call failed: ${err.message}`
-      logger.error(err, context);
-      throw new Error(context);
   }
-}
 
   /**
    * Summarize text into 1–2 sentence summary
@@ -69,27 +57,17 @@ async classify(text) {
    * @returns {Promise<string>} summary string
    */
   async summarize(text) {
-    try {
-      if (!text || !text.trim()) return "";
+    if (!text || !text.trim()) return "";
 
-      const cacheKey = `summarize:${text.substring(0, 100)}`;
-      if (this.cache.has(cacheKey)) {
-        logger.info('Cache hit for summarization');
-        return this.cache.get(cacheKey);
-      }
+    const cacheKey = `summarize:${text.substring(0, 100)}`;
+    const cached = this.#getCached(cacheKey);
+    if (cached) return cached;
 
-      const prompt = `Summarize the following email in 1-2 sentences: "${text}"`;
+    const prompt = `Summarize the following email in 1-2 sentences: "${text}"`;
+    const summary = await this.#generateContent(prompt, 'Summarization') || "";
 
-      const result = await this.model.generateContent(prompt);
-      const summary = result.response.text()?.trim() || "";
-
-      this.cache.set(cacheKey, summary);
-      return summary;
-    } catch (err) {
-      const context = `Summarization API call failed: ${err.message}`
-      logger.error(err, context);
-      throw new Error(context);
-    }
+    this.cache.set(cacheKey, summary);
+    return summary;
   }
 
   /**
@@ -105,14 +83,10 @@ async classify(text) {
 ${texts.map((text, i) => `${i}: "${text.substring(0, 200)}"`).join('\n')}
 Format: [["topic1","topic2"],["topic3"]]`;
 
-      const result = await this.model.generateContent(batchPrompt);
-      let content = result.response?.text?.()?.trim();
-
+      const content = await this.#generateContent(batchPrompt, 'Batch classification');
       if (!content) return texts.map(() => []);
 
-      content = content.replace(/^```(?:json)?\s*/, '').replace(/\s*```$/, '').trim();
-      const results = JSON.parse(content);
-      
+      const results = JSON.parse(this.#cleanResponse(content));
       return Array.isArray(results) ? results : texts.map(() => []);
     } catch (err) {
       logger.error(err, 'Batch classification failed, falling back to individual calls');
@@ -133,18 +107,42 @@ Format: [["topic1","topic2"],["topic3"]]`;
 ${texts.map((text, i) => `${i}: "${text.substring(0, 300)}"`).join('\n')}
 Format: ["summary1","summary2"]`;
 
-      const result = await this.model.generateContent(batchPrompt);
-      let content = result.response?.text?.()?.trim();
-
+      const content = await this.#generateContent(batchPrompt, 'Batch summarization');
       if (!content) return texts.map(() => "");
 
-      content = content.replace(/^```(?:json)?\s*/, '').replace(/\s*```$/, '').trim();
-      const results = JSON.parse(content);
-      
+      const results = JSON.parse(this.#cleanResponse(content));
       return Array.isArray(results) ? results : texts.map(() => "");
     } catch (err) {
       logger.error(err, 'Batch summarization failed, falling back to individual calls');
       return Promise.all(texts.map(text => this.summarize(text)));
     }
   }
+
+
+  // Helper method to check cache
+  #getCached(key) {
+    if (this.cache.has(key)) {
+      logger.info(`Cache hit for ${key.split(':')[0]}`);
+      return this.cache.get(key);
+    }
+    return null;
+  }
+
+  // Helper method to clean AI response
+  #cleanResponse(content) {
+    return content.replace(/^```(?:json)?\s*/, '').replace(/\s*```$/, '').trim();
+  }
+
+  // Helper method to generate content with error handling
+  async #generateContent(prompt, operation) {
+    try {
+      const result = await this.model.generateContent(prompt);
+      return result.response?.text?.()?.trim();
+    } catch (err) {
+      const context = `${operation} API call failed: ${err.message}`
+      logger.error(err, context);
+      throw new Error(context);
+    }
+  }
+
 }
