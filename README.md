@@ -81,7 +81,7 @@ node app/run.js --input sample/emails.json --mode summarize
 
 ## Cost Optimization Features
 
-- **Caching**: In-memory cache for repeated content (Lambda Layer chache in real scenario)
+- **Caching**: In-memory cache for repeated content (Lambda Layer cache in real scenario)
 - **Batch Processing**: Single API calls for multiple items
 - **Input Truncation**: Limits text length to reduce token usage
 - **Smart Fallbacks**: Falls back to individual processing if batch processing not available
