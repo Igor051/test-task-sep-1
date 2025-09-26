@@ -13,11 +13,13 @@ AWS Lambda function for classifying and summarizing email content using AI model
 ## Quick Start
 
 ### 1. Installation
+
 ```bash
 npm install
 ```
 
 ### 2. Environment Setup (.env example)
+
 ```bash
   MODEL_TYPE=gemini
   GEMINI_MODEL_VERSION=gemini-2.0-flash
@@ -26,11 +28,12 @@ npm install
 ```
 
 ### 3. Run Locally
+
 ```bash
 # Classify emails
 node app/run.js --input sample/emails.json --mode classify
 
-# Summarize emails  
+# Summarize emails
 node app/run.js --input sample/emails.json --mode summarize
 ```
 
@@ -54,6 +57,7 @@ node app/run.js --input sample/emails.json --mode summarize
 ## Output Examples
 
 ### Classification Mode
+
 ```json
 [
   { "id": 1, "topics": ["finance"] },
@@ -62,21 +66,27 @@ node app/run.js --input sample/emails.json --mode summarize
 ```
 
 ### Summarization Mode
+
 ```json
 [
   { "id": 1, "summary": "Invoice payment reminder for overdue account." },
-  { "id": 2, "summary": "Weekly engineering meeting covering API updates and migrations." }
+  {
+    "id": 2,
+    "summary": "Weekly engineering meeting covering API updates and migrations."
+  }
 ]
 ```
 
 ## Models
 
-### Gemini Model  
+### Gemini Model
+
 - **Type**: Google's AI model
 - **Cost**: Pay-per-use (optimized with caching/batching)
 - **Setup**: Requires `GEMINI_API_KEY`
 
 ### Local Model
+
 - **Type**: Just a simple example on how you can add new Model by extending ModelProvider class
 
 ## Cost Optimization Features
@@ -96,17 +106,20 @@ node app/run.js --input sample/emails.json --mode summarize
 ## Development
 
 ### Adding New Models
+
 1. Extend `ModelProvider` class
 2. Implement `classify()` and `summarize()` methods
 3. Add to model factory in `models/index.js`
 
 ### Adding New Operations
+
 1. Add operation function to `utils/operations.js`
 2. Update mode validation in `middleware/validateMode.js`
 
 ## Lambda Deployment
 
 The function is designed for AWS Lambda with:
+
 - **Runtime**: Node.js
 - **Handler**: `app/handler.handler`
 - **Environment Variables**: `MODEL_TYPE`, `GEMINI_API_KEY`, `LOG_LEVEL`, `GEMINI_MODEL_VERSION`

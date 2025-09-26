@@ -1,15 +1,14 @@
-import { getModel } from './models/index.js';
-import getLogger from './utils/logger.js';
-import middy from '@middy/core';
-import validateMode from './middleware/validateMode.js';
-import errorHandler from './middleware/errorHandler.js';
-import validateEmails from './middleware/validateEmails.js';
-import { operations } from './utils/operations.js';
+import { getModel } from "./models/index.js";
+import getLogger from "./utils/logger.js";
+import middy from "@middy/core";
+import validateMode from "./middleware/validateMode.js";
+import errorHandler from "./middleware/errorHandler.js";
+import validateEmails from "./middleware/validateEmails.js";
+import { operations } from "./utils/operations.js";
 
 const handlerController = async (event) => {
   try {
-
-    getLogger().info({event}, 'Handler called with event:');
+    getLogger().info({ event }, "Handler called with event:");
 
     const model = getModel();
 
@@ -18,10 +17,10 @@ const handlerController = async (event) => {
 
     return {
       statusCode: 200,
-      body: JSON.stringify(result)
+      body: JSON.stringify(result),
     };
   } catch (error) {
-    getLogger().error(error, 'Handler error:');
+    getLogger().error(error, "Handler error:");
     throw error;
   }
 };
@@ -29,4 +28,4 @@ const handlerController = async (event) => {
 export const handler = middy(handlerController)
   .use(validateMode())
   .use(validateEmails())
-  .use(errorHandler())
+  .use(errorHandler());

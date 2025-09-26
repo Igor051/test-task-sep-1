@@ -7,28 +7,29 @@ import getEmails from "./utils/getEmails.js";
 
 async function main() {
   try {
-  const {input: inputFile, mode} = minimist(process.argv.slice(2));
+    const { input: inputFile, mode } = minimist(process.argv.slice(2));
 
-  if (!inputFile || !mode) {
-    getLogger().error("Usage: node app/run.js --input <file> --mode <classify|summarize>");
-    process.exit(1);
-  }
+    if (!inputFile || !mode) {
+      getLogger().error(
+        "Usage: node app/run.js --input <file> --mode <classify|summarize>"
+      );
+      process.exit(1);
+    }
 
-  const emails = getEmails(inputFile)
+    const emails = getEmails(inputFile);
 
-  // Lambda's event object
-  const event = {
-    mode,
-    items: emails,
-  };
+    // Lambda's event object
+    const event = {
+      mode,
+      items: emails,
+    };
 
-  // Invoking Lambda function
-  const result = await handler(event, getContext());
+    // Invoking Lambda function
+    const result = await handler(event, getContext());
 
-  getLogger().info({response: result}, "Lambda response");
+    getLogger().info({ response: result }, "Lambda response");
 
-  getLogger().info({result: JSON.parse(result.body)}, "Result body");
-
+    getLogger().info({ result: JSON.parse(result.body) }, "Result body");
   } catch (err) {
     getLogger().error(`Execution failed: ${err.message}`);
     process.exit(1);
